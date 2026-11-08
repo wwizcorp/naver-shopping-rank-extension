@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Mublo 렌탈 순위 확인",
+  "description": "미션 등록 화면에서 고른 키워드로 네이버 쇼핑 PC 검색 5페이지 안에 우리 상품이 있는지 확인합니다.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "111",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["cookies"],
+  "host_permissions": ["https://search.shopping.naver.com/*"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://search.shopping.naver.com/search/*"],
+      "js": ["src/rank-core.js", "src/naver-content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["installed.json"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
