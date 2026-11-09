@@ -1,5 +1,6 @@
 /**
- * 웹스토어에 올릴 zip — manifest.json·installed.json·src·icons 만 담는다.  npm run pack → dist/naver-shopping-rank-{버전}.zip
+ * 배포용 zip — manifest.json·installed.json·src·icons 만 담는다.  npm run pack → dist/naver-shopping-rank-{버전}.zip
+ * GitHub 릴리스는 npm run release(tools/release.js).
  * PowerShell 7(pwsh)의 Compress-Archive 를 쓴다(외부 패키지 없음).
  */
 const { execFileSync } = require('node:child_process');
