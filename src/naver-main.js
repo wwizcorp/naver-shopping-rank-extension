@@ -33,17 +33,19 @@
       return;
     }
 
-    // 검색창을 눌러 한 글자씩 넣는다 — 글자마다 input 이벤트(자동완성 등 네이버 핸들러가 돈다)
+    // 사람처럼 잠깐 화면을 보고, 검색창을 마우스로 눌러 한 글자씩 친다(허브 type_main_search — CDP insertText)
+    await R.sleep(R.rand(800, 1800));
+    await R.clickElement(input);
     input.focus();
-    input.click();
-    input.value = '';
-    for (const character of job.keyword) {
-      input.value += character;
-      input.dispatchEvent(new InputEvent('input', { bubbles: true, data: character, inputType: 'insertText' }));
-      await R.sleep(70 + Math.random() * 90);
+    if (input.value) input.select(); // 남은 글자는 골라 두면 다음 글자가 덮어 쓴다
+    await R.typeText(input, job.keyword);
+    if (input.value !== job.keyword) {
+      // 한 글자씩 넣기가 어긋났을 때만 값을 통째로 넣는다(허브와 같음)
+      input.value = job.keyword;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
     }
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    await R.sleep(400 + Math.random() * 300);
+    await R.sleep(R.rand(400, 800));
 
     // 자동완성 창이 Enter 를 가로챌 수 있어 폼을 검색 버튼과 함께 제출한다(허브와 같음)
     const submitter = form.querySelector('#search-btn') || Array.from(form.elements).find((el) =>

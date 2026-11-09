@@ -12,7 +12,6 @@
 
   const R = globalThis.MubloRank;
   const Core = R.Core;
-  const pause = () => R.sleep(1500 + Math.random() * 1500); // 사람처럼 쉬었다 넘긴다
   const keywordOf = () => new URL(location.href).searchParams.get('query') || '';
 
   /** 찾은 카드를 화면에서 표시 — 링크의 data-shp-contents-id 로 찾는다(없으면 넘어간다) */
@@ -28,20 +27,35 @@
   // ─── 페이지 넘기기 ───────────────────────────
   const PAGE_BUTTONS = '[class*="pagination_btn_page__"],[data-shp-inventory="prd_pgn"][data-shp-contents-type="pageNo"]';
 
+  /**
+   * 다음 페이지로 — 키워드 허브 _move_to_result_page 와 같은 모양(0.3.0~).
+   * 결과를 휠로 내려 읽으며 페이지 번호 줄까지 서서히 가고, 1.4~2.2초 쉰 뒤 번호를 마우스로 누른다.
+   * 주소가 바뀌면 새로고침해 그 페이지 JSON 을 받는다(번호 클릭은 주소·카드만 바꾸고 JSON 은 예전 값 — 허브도 새로고침).
+   * 세 번 눌러도 안 넘어가면 그때만 고정 조건을 채운 주소로 간다(허브 allow_direct_recovery).
+   */
   async function goToPage(page) {
-    const button = Array.from(document.querySelectorAll(PAGE_BUTTONS))
+    const bar = () => document.querySelector('div[class*="pagination_pagination__"]');
+    const findButton = () => Array.from(document.querySelectorAll(PAGE_BUTTONS))
       .find((el) => (el.textContent || '').replace(/[^0-9]/g, '') === String(page));
-    if (button) {
-      button.click();
+    await R.readDownTo(() => bar() || findButton());
+    await R.sleep(R.rand(1400, 2200));
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const button = findButton();
+      if (!button) break;
+      await R.clickElement(button);
       for (let i = 0; i < 40; i++) {
         await R.sleep(250);
         if (Core.pageFromUrl(location.href) === page) {
-          location.reload(); // 주소만 바뀌고 JSON 은 예전 값 — 새로고침해 그 페이지 JSON 을 받는다
+          await R.sleep(R.rand(600, 1200));
+          // 새로고침은 스크롤 자리를 되살린다 — 맨 아래면 다음 페이지에서 결과를 읽지 않고 바로 번호를 누르게 된다.
+          // 네이버도 페이지를 넘기면 맨 위에서 시작하므로 맨 위로 올려 두고 새로고침한다.
+          window.scrollTo(0, 0);
+          location.reload();
           return;
         }
       }
+      await R.sleep(R.rand(800, 1200));
     }
-    // 번호를 못 찾았거나 이동하지 않았다 — 고정 조건을 채운 주소로 간다
     location.assign(Core.resultPageUrl(location.href, page));
   }
 
@@ -101,7 +115,7 @@
     job.page = page + 1;
     await R.saveJob(job);
     R.show(`${R.head(job.keyword)}<div class="t">${job.page}/${job.max}페이지로 넘어갑니다…</div>`);
-    await pause();
+    await R.sleep(R.rand(800, 1600)); // 화면이 그려진 뒤 읽기 시작한다
     await goToPage(job.page);
   }
 

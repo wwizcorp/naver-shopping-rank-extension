@@ -1,5 +1,5 @@
 /**
- * 백그라운드 — content script 가 못 하는 세 가지.
+ * 백그라운드 — content script 가 못 하는 네 가지(4: 아래 '진짜 입력').
  *
  * 1) 네이버 로그인 확인: content script 는 쿠키를 볼 수 없다.
  *    NID_AUT 는 네이버 로그인 쿠키(.naver.com)라 search.shopping.naver.com 주소로 조회된다.
@@ -58,8 +58,56 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.session.set({ [key(tabId)]: message.job }).then(() => sendResponse({ ok: true }));
     return true;
   }
+  if (type === 'mublo-rank:input') {
+    sendInput(tabId, message.steps || []).then(sendResponse, (error) => sendResponse({ ok: false, error: String(error && error.message || error) }));
+    return true;
+  }
+  if (type === 'mublo-rank:detach') {
+    detach(tabId).then(() => sendResponse({ ok: true }));
+    return true;
+  }
   return false;
 });
+
+// ─── 진짜 입력(0.3.0~) ──────────────────────────────────────────────────
+// content script 의 element.click()·scrollBy 는 사람 입력이 아니다(isTrusted=false, 휠 이벤트 없음). 3페이지에서 차단됐다
+// (소유자 2026-11-09). 키워드 허브와 같은 CDP 명령(Input.dispatchMouseEvent 휠·이동·클릭, Input.insertText)을
+// chrome.debugger 로 이 탭에 보낸다. 붙어 있는 동안 Chrome 위에 '디버깅 중' 줄이 뜨므로 작업이 끝나면 뗀다.
+const attached = new Set();
+const ALLOWED = new Set(['Input.dispatchMouseEvent', 'Input.insertText', 'Input.dispatchKeyEvent']);
+
+async function attach(tabId) {
+  if (attached.has(tabId)) return;
+  try {
+    await chrome.debugger.attach({ tabId }, '1.3');
+  } catch (error) {
+    if (!/already attached/i.test(String(error && error.message))) throw error;
+  }
+  attached.add(tabId);
+}
+async function detach(tabId) {
+  if (!attached.has(tabId)) return;
+  attached.delete(tabId);
+  await chrome.debugger.detach({ tabId }).catch(() => null);
+}
+async function sendInput(tabId, steps) {
+  for (const step of steps) {
+    if (!step || !ALLOWED.has(step.method)) return { ok: false, error: 'not_allowed' };
+  }
+  await attach(tabId);
+  for (const step of steps) {
+    try {
+      await chrome.debugger.sendCommand({ tabId }, step.method, step.params || {});
+    } catch (error) {
+      // 페이지 이동으로 떨어졌으면 한 번 다시 붙는다
+      attached.delete(tabId);
+      await attach(tabId);
+      await chrome.debugger.sendCommand({ tabId }, step.method, step.params || {});
+    }
+  }
+  return { ok: true };
+}
+chrome.debugger.onDetach.addListener((source) => attached.delete(source.tabId));
 
 // 쇼핑 링크가 새 탭으로 열렸다 — 쇼핑 결과로 넘어가던 작업을 새 탭으로 옮긴다
 chrome.tabs.onCreated.addListener(async (tab) => {
@@ -72,5 +120,6 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
+  attached.delete(tabId);
   chrome.storage.session.remove(key(tabId));
 });
