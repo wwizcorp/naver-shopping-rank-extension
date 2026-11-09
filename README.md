@@ -27,7 +27,7 @@
 ### 1. 설치 여부 확인
 ```js
 fetch(`chrome-extension://${EXTENSION_ID}/installed.json`)
-  .then(r => r.json())            // {name: "mublo-rental-rank", version: "0.1.0"}
+  .then(r => r.json())            // {name: "naver-shopping-rank", version: "0.1.0"}
   .catch(() => null);              // 설치되지 않음
 ```
 
@@ -79,7 +79,7 @@ npm run check   # 문법 검사와 파서 단위 테스트
 ## 배포 (크롬 웹스토어, 비공개)
 
 1. [Chrome 웹스토어 개발자 대시보드](https://chrome.google.com/webstore/devconsole)에서 개발자로 등록합니다(1회 $5).
-2. `npm run pack`으로 `dist/mublo-rental-rank-{버전}.zip`을 만들어 올립니다. 공개 범위는 **비공개(Unlisted)**로 합니다.
+2. `npm run pack`으로 `dist/naver-shopping-rank-{버전}.zip`을 만들어 올립니다. 공개 범위는 **비공개(Unlisted)**로 합니다.
    - zip 안에는 `manifest.json`, `installed.json`, `src/`, `icons/`만 들어갑니다. PowerShell 7(`pwsh`)이 필요합니다.
    - 아이콘을 바꾸려면 `node tools/make-icons.js`를 고친 뒤 다시 실행합니다.
 3. 심사 항목:
