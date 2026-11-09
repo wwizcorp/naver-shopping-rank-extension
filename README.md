@@ -23,7 +23,15 @@
 | `src/background.js` | 네이버 로그인 쿠키(`NID_AUT`) 확인, 탭별 작업 저장(`chrome.storage.session`) |
 | `installed.json` | 관리자 화면이 설치 여부와 버전을 확인하는 파일. 버전은 `manifest.json`과 같아야 합니다(테스트가 확인) |
 
-권한은 `cookies`·`storage`와 `https://search.shopping.naver.com/*`만 씁니다. 관리자 화면 쪽 권한은 쓰지 않습니다.
+권한은 `cookies`·`storage`·`alarms`·`debugger`와 `https://search.shopping.naver.com/*`만 씁니다. 관리자 화면 쪽 권한은 쓰지 않습니다.
+
+### 사람 입력 (0.3.0~)
+content script 의 `element.click()`·`scrollBy` 는 사람 입력이 아니어서(`isTrusted=false`, 휠 없음) 3페이지에서 차단됐다(2026-11-09).
+그래서 키워드 허브와 같은 CDP 명령을 `chrome.debugger` 로 보낸다 — `Input.dispatchMouseEvent`(마우스 이동·휠·클릭), `Input.insertText`(검색어).
+- 통합검색·쇼핑 결과는 휠로 한 화면씩(화면 높이 85%, 320~900px) 내려 읽고 0.4~1.1초 쉬며, 가끔 220~520px 되짚는다.
+- 페이지 번호 줄까지 서서히 내려가 1.4~2.2초 쉰 뒤 번호를 마우스로 누르고, 주소가 바뀌면 맨 위로 올려 새로고침해 그 페이지 JSON 을 읽는다.
+- 디버거가 붙어 있는 동안 Chrome 위에 '디버깅 중' 줄이 뜬다. 결과가 나오면 뗀다. 붙지 못하면(개발자 도구가 열린 탭 등) DOM 스크롤·클릭으로 대신한다.
+- 가짜 네이버(메인·통합검색·쇼핑 5페이지)에 이 확장을 올려 끝까지 돌려 확인했다: 모든 클릭·입력 `isTrusted=true`, 페이지마다 휠 13~16번.
 
 ## 관리자 화면과 주고받는 형식
 

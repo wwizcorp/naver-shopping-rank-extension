@@ -23,12 +23,17 @@
     }
     R.show(`${R.head(job.keyword)}<div class="t">쇼핑 결과로 이동하는 중…</div>`);
 
+    // 사람처럼 결과를 2~8초 내려 읽고 위로 돌아온다(허브 search_result_dwell)
+    await R.sleep(R.rand(600, 1400));
+    await R.dwell(R.rand(2, 8));
+
     // 쇼핑 영역은 늦게 그려질 수 있다 — 최대 10초 기다린다
-    const anchor = await R.waitFor(() => {
+    const findLink = () => {
       const anchors = Array.from(document.querySelectorAll('a[href]'));
       const index = R.Core.pickShoppingLink(anchors.map((a) => ({ name: linkName(a), href: a.href })));
       return index === -1 ? null : anchors[index];
-    }, 10000);
+    };
+    const anchor = await R.waitFor(findLink, 10000);
     if (!anchor) {
       await R.finish(job, { status: 'error', cause: 'shopping_link_absent', message: '통합검색에서 쇼핑(가격비교) 결과 링크를 찾지 못했습니다. 이 창에서 [쇼핑]을 눌러 직접 확인해 주세요.' });
       return;
@@ -36,10 +41,8 @@
 
     job.stage = 'shopping';
     await R.saveJob(job);
-    await R.sleep(800 + Math.random() * 1200); // 사람처럼 잠깐 보고 누른다
-    anchor.scrollIntoView({ block: 'center' });
-    anchor.removeAttribute('target');
-    anchor.click();
+    anchor.removeAttribute('target'); // 새 창으로 열리면 결과를 관리자 화면에 돌려보낼 수 없다
+    await R.clickElement(anchor);     // 휠로 링크까지 내려가 마우스로 누른다
   }
 
   run().catch(() => { /* 통합검색 화면은 건드리지 않는다 */ });
