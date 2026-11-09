@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "N쇼핑순위검색",
-  "description": "미션 등록 화면에서 고른 키워드로 네이버 쇼핑 PC 검색 5페이지 안에 우리 상품이 있는지 확인합니다.",
-  "version": "0.1.0",
+  "description": "미션 등록 화면에서 고른 키워드를 네이버 메인에서 검색해, 쇼핑 PC 검색 5페이지 안에 우리 상품이 있는지 확인합니다.",
+  "version": "0.2.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi+7Z8eHxYXzlRakaRozTB+cieD0eOFEpyN2Pueq8Nad33KkQ1O1q2FCtNoP/Jy5fNA+IMNvvmpsZxPRlGqcpYw71/gbTSz+kHr/unuEPuQ7eDJRcBt99Tmw/aYfm/REMaKgbEabCeXSTz11XzLBRYP7tGFjj9hGeM6varSlJCqK9j+7VYl3hehj5prjMoboqR6RoRudfuejxAO0jIeWKBj4JPuKZtjRhRv5YjwNL6753z7FMywe5Ov7naU3x3txewcQ3MTVcF7rdA2luDWd7nond97RerFxTDnspmMZbKb0OCDPfULl2BWAS8cOLiHTveXZcKTITaPw64CYABB9N8wIDAQAB",
   "minimum_chrome_version": "111",
   "icons": {
@@ -11,22 +11,59 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": ["cookies"],
-  "host_permissions": ["https://search.shopping.naver.com/*"],
+  "permissions": [
+    "cookies",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://search.shopping.naver.com/*"
+  ],
   "background": {
     "service_worker": "src/background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://search.shopping.naver.com/search/*"],
-      "js": ["src/rank-core.js", "src/naver-content.js"],
+      "matches": [
+        "https://www.naver.com/*"
+      ],
+      "js": [
+        "src/rank-core.js",
+        "src/common.js",
+        "src/naver-main.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://search.naver.com/*"
+      ],
+      "js": [
+        "src/rank-core.js",
+        "src/common.js",
+        "src/naver-search.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://search.shopping.naver.com/search/*"
+      ],
+      "js": [
+        "src/rank-core.js",
+        "src/common.js",
+        "src/naver-content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["installed.json"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "installed.json"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }

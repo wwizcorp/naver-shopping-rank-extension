@@ -50,7 +50,7 @@
     return url.toString();
   }
 
-  /** 관리자 화면이 여는 1페이지 주소 (#mublo-rank= 작업 정보 포함) */
+  /** 관리자 화면이 여는 1페이지 주소 (#mublo-rank= 작업 정보 포함) — 0.1.x 방식, 바로 열면 보안 확인이 뜬다 */
   function firstPageUrl(keyword, job) {
     const word = clean(keyword).replace(/\s+/g, ' ');
     const base = resultPageUrl(`https://${RESULT_HOST}/search/all?query=${encodeURIComponent(word)}`, 1);
@@ -58,8 +58,41 @@
   }
 
   /**
-   * #mublo-rank= 작업 정보 → {nonce, origin, ep, mall, mid, max} (형식이 틀리면 null).
+   * 관리자 화면이 여는 주소(0.2.0~) — 네이버 메인 + #mublo-rank= 작업 정보(검색어 포함).
+   * 쇼핑 검색 주소를 바로 열면 네이버가 영수증 보안 확인을 띄운다(소유자 2026-11-09). 그래서 허브처럼
+   * 메인 검색창에 입력 → 통합검색 '가격비교 더보기' → 쇼핑 결과로 사람과 같은 길로 들어간다.
+   */
+  function mainUrl(job) {
+    return `https://www.naver.com/#${HASH_KEY}=${encodeURIComponent(JSON.stringify(job))}`;
+  }
+
+  /**
+   * 통합검색 결과에서 쇼핑 결과로 가는 링크 — [{name, href}] 중 고를 번호(없으면 -1).
+   * '네이버 가격비교 더보기', 없으면 상단 '쇼핑' 탭 중 가격비교 목록으로 가는 것 (허브 click_price_compare_more 와 같음).
+   */
+  function pickShoppingLink(items) {
+    const compact = (value) => clean(value).replace(/\s+/g, '').toLowerCase();
+    const more = items.findIndex((item) => compact(item.name).includes('가격비교') && compact(item.name).includes('더보기'));
+    if (more !== -1) return more;
+    return items.findIndex((item) => compact(item.name).startsWith('쇼핑')
+      && /^https:\/\/search\.shopping\.naver\.com\/search\/all/.test(clean(item.href)));
+  }
+
+  /** 네이버 보안 확인·접속 제한 화면 문구 (허브 core.py SECURITY_TEXTS 와 같음) */
+  const SECURITY_TEXTS = [
+    '쇼핑 서비스 접속이 일시적으로 제한', '서비스 접속이 일시적으로 제한', '잠시 후 다시 이용',
+    '보안 확인을 완료해 주세요', '자동입력 방지', '로봇이 아닙니다', '정답을 입력해주세요',
+    '비정상적인 접근', '비정상적인 요청',
+  ];
+  function isSecurityText(text) {
+    const body = String(text || '');
+    return SECURITY_TEXTS.some((needle) => body.includes(needle));
+  }
+
+  /**
+   * #mublo-rank= 작업 정보 → {nonce, origin, ep, mall, mid, max, keyword} (형식이 틀리면 null).
    * ep(쇼핑몰 상품 ID)는 쇼핑몰명과 함께여야 하고, mid 와 ep 중 하나는 있어야 한다.
+   * keyword 는 메인에서 검색할 말(0.2.0~) — 쇼핑 주소로 바로 연 0.1.x 작업에는 없다.
    */
   function parseJobHash(hash) {
     const match = String(hash || '').match(new RegExp(`(?:^#|&)${HASH_KEY}=([^&]*)`));
@@ -78,6 +111,7 @@
       mall: clean(raw.mall).slice(0, 100),
       mid: clean(raw.mid).replace(/\D/g, '').slice(0, 20),
       max: Math.min(MAX_PAGES, Math.max(1, Number(raw.max) || MAX_PAGES)),
+      keyword: clean(raw.keyword).replace(/\s+/g, ' ').slice(0, 100),
     };
     try {
       const origin = new URL(clean(raw.origin));
@@ -199,7 +233,7 @@
 
   const api = {
     PER_PAGE, MAX_PAGES, HASH_KEY, RESULT_HOST,
-    normalizeMall, pageFromUrl, resultPageUrl, firstPageUrl, parseJobHash,
+    normalizeMall, pageFromUrl, resultPageUrl, firstPageUrl, mainUrl, pickShoppingLink, isSecurityText, parseJobHash,
     isCatalog, idsFromUrl, parseNextData, matchCard, findTarget, foundResult,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

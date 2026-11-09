@@ -1,11 +1,11 @@
 {
   "name": "naver-shopping-rank-extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "렌탈 SaaS 미션 등록용 네이버 쇼핑 순위 확인 Chrome 익스텐션",
   "scripts": {
     "test": "node --test tests/rank-core.test.js",
-    "check": "node --check src/rank-core.js && node --check src/naver-content.js && node --check src/background.js && npm test",
+    "check": "node --check src/rank-core.js && node --check src/common.js && node --check src/naver-main.js && node --check src/naver-search.js && node --check src/naver-content.js && node --check src/background.js && npm test",
     "pack": "npm run check && node tools/pack.js",
     "release": "npm run pack && node tools/release.js"
   }
