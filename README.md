@@ -102,6 +102,9 @@ npm run check   # 문법 검사와 파서 단위 테스트
 - 렌탈 SaaS `.env` 는 비워 둔다. ID 는 고정값을, 최신 버전은 GitHub 릴리스를 쓴다(다른 key 로 시험할 때만 `RENTAL_RANK_EXTENSION_ID`).
 - 업데이트:
   1. `manifest.json`·`installed.json` 버전을 함께 올리고 PR 을 main 에 병합한다.
-  2. `npm run release` — GitHub 릴리스가 올라가면 SaaS 모달이 1시간 안에 새 버전을 안내한다. SaaS 는 다시 올릴 필요 없다.
-  3. 스튜디오 저장소에서 `python tools/port_rank_extension.py D:/project/mublo/naver-shopping-rank-extension` 로 복사해
-     스튜디오를 배포한다. 스튜디오가 켜질 때 회원 PC 의 확장 폴더를 새 파일로 바꾸고, 회원이 Chrome 을 다시 켜면 반영된다.
+  2. `npm run release` — 끝. GitHub 릴리스가 올라가면
+     - 렌탈 스튜디오가 깔린 PC: 스튜디오가 최신 릴리스를 받아 확장 폴더 파일을 바꾸고, 확장이 5분 안에 스스로 다시 불러온다
+       (`background.js` — 폴더의 installed.json 버전이 지금 버전과 다르면 `chrome.runtime.reload()`, 0.2.1~).
+     - 직접 설치한 PC: SaaS [순위검색 확장 설치] 모달이 1시간 안에 새 버전을 안내한다 — 받아서 같은 폴더에 덮어쓴다.
+  3. 스튜디오 설치본에 든 사본(`tools/port_rank_extension.py`)은 GitHub 를 못 받을 때의 예비다. 가끔 맞춰 두면 된다.
+- Chrome 은 압축해제 확장을 스스로 업데이트하지 않는다(웹스토어·회사 정책 확장만). 그래서 파일은 스튜디오가 바꾸고 확장은 다시 불러오기만 한다.

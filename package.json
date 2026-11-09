@@ -1,6 +1,6 @@
 {
   "name": "naver-shopping-rank-extension",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "렌탈 SaaS 미션 등록용 네이버 쇼핑 순위 확인 Chrome 익스텐션",
   "scripts": {
