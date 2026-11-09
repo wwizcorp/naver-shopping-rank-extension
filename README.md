@@ -76,21 +76,20 @@ npm run check   # 문법 검사와 파서 단위 테스트
    ```
 4. 오른쪽 위 결과 상자를 확인합니다. 키워드 허브의 `find_rank` 결과와 같은지도 비교합니다.
 
-## 배포 (크롬 웹스토어, 비공개)
+## 배포 (렌탈 스튜디오가 설치, 웹스토어 없음)
 
-1. [Chrome 웹스토어 개발자 대시보드](https://chrome.google.com/webstore/devconsole)에서 개발자로 등록합니다(1회 $5).
-2. `npm run pack`으로 `dist/naver-shopping-rank-{버전}.zip`을 만들어 올립니다. 공개 범위는 **비공개(Unlisted)**로 합니다.
-   - zip 안에는 `manifest.json`, `installed.json`, `src/`, `icons/`만 들어갑니다. PowerShell 7(`pwsh`)이 필요합니다.
-   - 아이콘을 바꾸려면 `node tools/make-icons.js`를 고친 뒤 다시 실행합니다.
-3. 심사 항목:
-   - 단일 목적: "관리자가 요청한 키워드의 네이버 쇼핑 순위 확인"
-   - 상세 설명 첫머리에 **"네이버가 만들거나 제휴한 도구가 아닙니다."**를 넣습니다(상표 사칭 오해 방지). `manifest.json` 설명에도 같은 문장이 있습니다.
-   - 권한 사유: `cookies`는 네이버 로그인 확인, host 권한은 네이버 쇼핑 검색 결과 읽기
-   - 개인정보처리방침 URL: `PRIVACY.md` 내용을 공개 주소에 올립니다. 회사명과 문의처를 채운 뒤 올립니다.
-   - 수집해 외부로 보내는 데이터는 없습니다.
-4. 처음 등록하면 확장 프로그램 ID가 정해집니다. 렌탈 SaaS `.env`에 아래처럼 넣으면 미션카드 제작 요청 창에 [익스텐션 설치] 버튼이 나타납니다.
-   ```env
-   RENTAL_RANK_EXTENSION_ID=<웹스토어 확장 프로그램 ID>
-   RENTAL_RANK_EXTENSION_VERSION=0.1.0
-   ```
-5. 업데이트할 때는 `manifest.json`과 `installed.json`의 버전을 함께 올려 다시 업로드하고, `.env`의 `RENTAL_RANK_EXTENSION_VERSION`도 올립니다. 설치된 브라우저에는 스토어가 자동으로 업데이트하고, 그 전까지 요청 창에 업데이트 안내가 보입니다.
+우리 사업자만 쓰므로 웹스토어에 올리지 않는다(2026-11-09). 렌탈 스튜디오가 설치본에 이 확장을 담고,
+회원이 [설치]를 누르면 회원 Chrome 에 '압축해제된 확장 프로그램'으로 넣는다(스튜디오 `app/rental/chrome_extension.py`).
+
+- **확장 ID 는 `manifest.json` 의 `key` 로 고정된다: `njjglppimiohnemnmepcenogmccioimp`.** 모든 PC 에서 같다.
+  `key` 를 바꾸거나 지우면 ID 가 바뀌어 SaaS 가 설치를 못 알아본다. 짝이 되는 개인키 `extension-key.pem` 은
+  git 에 넣지 않는다(지금 방식에서는 쓰지 않지만 crx 로 묶을 일이 생기면 필요하다).
+- 렌탈 SaaS `.env`:
+  ```env
+  RENTAL_RANK_EXTENSION_ID=njjglppimiohnemnmepcenogmccioimp
+  RENTAL_RANK_EXTENSION_VERSION=0.1.0
+  ```
+- 업데이트: `manifest.json`·`installed.json` 버전을 함께 올리고 `npm run check` 뒤, 스튜디오 저장소에서
+  `python tools/port_rank_extension.py D:/project/mublo/naver-shopping-rank-extension` 로 복사해 스튜디오를 배포한다.
+  스튜디오가 켜질 때 회원 PC 의 확장 폴더를 새 파일로 바꾸고, 회원이 Chrome 을 다시 켜면 반영된다.
+  SaaS `.env` 의 `RENTAL_RANK_EXTENSION_VERSION` 도 올린다.
