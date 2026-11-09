@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test tests/rank-core.test.js",
     "check": "node --check src/rank-core.js && node --check src/naver-content.js && node --check src/background.js && npm test",
-    "pack": "npm run check && node tools/pack.js"
+    "pack": "npm run check && node tools/pack.js",
+    "release": "npm run pack && node tools/release.js"
   }
 }
