@@ -15,12 +15,15 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `src/rank-core.js` | 순수 함수: `__NEXT_DATA__` 읽기, 상품 매칭, 페이지 주소, 작업 정보 검증 |
-| `src/naver-content.js` | 네이버 쇼핑 검색 탭에서 실행: 로그인 확인, 1→5페이지 넘기기, 결과 상자 표시, 관리자 탭으로 결과 보내기 |
-| `src/background.js` | 네이버 로그인 쿠키(`NID_AUT`) 확인 |
+| `src/rank-core.js` | 순수 함수: `__NEXT_DATA__` 읽기, 상품 매칭, 페이지 주소, 작업 정보 검증, 쇼핑 링크 고르기, 보안 확인 문구 |
+| `src/common.js` | content script 공통: 탭별 작업 읽기·쓰기, 결과 상자, 결과 보내기, 로그인·보안 확인 검사 |
+| `src/naver-main.js` | 네이버 메인(`www.naver.com`): 검색창에 한 글자씩 입력하고 검색 제출 |
+| `src/naver-search.js` | 통합검색(`search.naver.com`): '네이버 가격비교 더보기'(없으면 '쇼핑' 탭)를 눌러 쇼핑 결과로 |
+| `src/naver-content.js` | 쇼핑 결과(`search.shopping.naver.com`): 1→5페이지 넘기며 우리 상품 찾기, 결과 상자, 관리자 창으로 결과 보내기 |
+| `src/background.js` | 네이버 로그인 쿠키(`NID_AUT`) 확인, 탭별 작업 저장(`chrome.storage.session`) |
 | `installed.json` | 관리자 화면이 설치 여부와 버전을 확인하는 파일. 버전은 `manifest.json`과 같아야 합니다(테스트가 확인) |
 
-권한은 `cookies`와 `https://search.shopping.naver.com/*`만 씁니다. 관리자 화면 쪽 권한은 쓰지 않습니다.
+권한은 `cookies`·`storage`와 `https://search.shopping.naver.com/*`만 씁니다. 관리자 화면 쪽 권한은 쓰지 않습니다.
 
 ## 관리자 화면과 주고받는 형식
 
@@ -31,13 +34,15 @@ fetch(`chrome-extension://${EXTENSION_ID}/installed.json`)
   .catch(() => null);              // 설치되지 않음
 ```
 
-### 2. 순위 확인 열기
-`window.open`으로 엽니다. 결과를 돌려받으려면 `noopener`를 쓰면 안 됩니다.
+### 2. 순위 확인 열기 (0.2.0~)
+`window.open`으로 **네이버 메인**을 엽니다. 결과를 돌려받으려면 `noopener`를 쓰면 안 됩니다.
 ```
-https://search.shopping.naver.com/search/all?adQuery=…&frm=NVSCPRO&origQuery=…&pagingSize=40
-  &productSet=total&query=키워드&sort=rel&timestamp=&viewType=list&pagingIndex=1
-  #mublo-rank=<encodeURIComponent(JSON)>
+https://www.naver.com/#mublo-rank=<encodeURIComponent(JSON)>
 ```
+쇼핑 검색 주소(`search.shopping.naver.com/search/all?...`)를 바로 열면 네이버가 **영수증 보안 확인**을 띄웁니다(2026-11-09).
+그래서 키워드 허브처럼 사람과 같은 길로 들어갑니다: 메인 검색창에 한 글자씩 입력 → 통합검색 '가격비교 더보기' → 쇼핑 결과.
+작업은 주소가 아니라 `chrome.storage.session`(탭별)에 두고 이어 갑니다. 중간에 보안 확인이 뜨면 끝내지 않고
+"풀어 주세요"를 띄우며, 풀면 이어서 확인합니다. 0.1.x 처럼 쇼핑 주소에 `#mublo-rank=`를 붙여 열어도 동작은 합니다.
 | 키 | 필수 | 설명 |
 |---|---|---|
 | `nonce` | ✔ | 요청마다 새로 만드는 값. 결과 메시지와 비교합니다 |
@@ -45,6 +50,7 @@ https://search.shopping.naver.com/search/all?adQuery=…&frm=NVSCPRO&origQuery=�
 | `mid` | △ | 네이버 상품번호 |
 | `ep` + `mall` | △ | EP id(`{goods_id}_{plan_id}`)와 네이버 쇼핑몰명(`rental_config.naver_shop_name`) |
 | `max` | | 확인할 페이지 수(1~5, 기본 5) |
+| `keyword` | ✔ | 네이버 메인에서 검색할 말(0.2.0~) |
 
 `mid`와 `ep`+`mall` 중 하나는 반드시 있어야 합니다.
 

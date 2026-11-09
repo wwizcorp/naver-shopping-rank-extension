@@ -114,7 +114,7 @@ test('페이지 주소 — 고정 조건을 채우고 pagingIndex 를 바꾼다'
 });
 
 test('1페이지 주소와 작업 정보가 왕복된다', () => {
-  const job = { nonce: 'n1', origin: 'https://seller1.example.com', ep: '11_3', mall: '위즈샵', mid: '', max: 5 };
+  const job = { nonce: 'n1', origin: 'https://seller1.example.com', ep: '11_3', mall: '위즈샵', mid: '', max: 5, keyword: '' };
   const href = core.firstPageUrl('  코웨이  정수기 렌탈 ', job);
   const url = new URL(href);
   assert.equal(url.searchParams.get('query'), '코웨이 정수기 렌탈');
@@ -137,4 +137,34 @@ test('installed.json 버전이 manifest 와 같다', () => {
   const manifest = require('../manifest.json');
   const installed = require('../installed.json');
   assert.equal(installed.version, manifest.version);
+});
+
+test('네이버 메인 주소 — 작업 정보(검색어 포함)가 왕복된다', () => {
+  const job = { nonce: 'n1', origin: 'https://seller1.example.com', ep: '11_3', mall: '위즈샵', mid: '8812', max: 5, keyword: '코웨이 정수기 렌탈' };
+  const url = new URL(core.mainUrl(job));
+  assert.equal(url.origin + url.pathname, 'https://www.naver.com/');
+  assert.equal(url.search, '', '검색 주소를 만들지 않는다');
+  assert.deepEqual(core.parseJobHash(url.hash), job);
+});
+
+test('검색어는 공백을 하나로, 100자까지', () => {
+  const enc = (o) => `#mublo-rank=${encodeURIComponent(JSON.stringify(o))}`;
+  assert.equal(core.parseJobHash(enc({ nonce: 'n', mid: '1', keyword: '  업소용   정수기 ' })).keyword, '업소용 정수기');
+  assert.equal(core.parseJobHash(enc({ nonce: 'n', mid: '1', keyword: 'a'.repeat(150) })).keyword.length, 100);
+});
+
+test('통합검색에서 쇼핑 결과로 가는 링크 — 가격비교 더보기, 없으면 쇼핑 탭', () => {
+  const more = { name: '네이버 가격비교 더보기', href: 'https://search.shopping.naver.com/search/all?query=a' };
+  const tab = { name: '쇼핑 새 창 열림', href: 'https://search.shopping.naver.com/search/all?query=a&frm=NVSHTTL' };
+  const live = { name: '쇼핑라이브', href: 'https://shoppinglive.naver.com/search?query=a' };
+  const other = { name: '더보기', href: 'https://search.naver.com/x' };
+  assert.equal(core.pickShoppingLink([other, tab, more]), 2);
+  assert.equal(core.pickShoppingLink([other, live, tab]), 2);
+  assert.equal(core.pickShoppingLink([other, live]), -1);
+});
+
+test('보안 확인 화면 문구를 알아본다', () => {
+  assert.equal(core.isSecurityText('정답을 입력해주세요 영수증'), true);
+  assert.equal(core.isSecurityText('쇼핑 서비스 접속이 일시적으로 제한되었습니다'), true);
+  assert.equal(core.isSecurityText('업소용 정수기 렌탈 최저가'), false);
 });
