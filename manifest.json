@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Naver Shopping 순위확인",
+  "name": "N쇼핑순위검색",
   "description": "미션 등록 화면에서 고른 키워드로 네이버 쇼핑 PC 검색 5페이지 안에 우리 상품이 있는지 확인합니다.",
   "version": "0.1.0",
   "minimum_chrome_version": "111",
